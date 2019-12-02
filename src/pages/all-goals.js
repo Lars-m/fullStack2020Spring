@@ -2,7 +2,7 @@ import { graphql } from "gatsby";
 import React from "react";
 import Layout from "../components/layout";
 import {makeUlForGoalsV2} from "../helpers/goalHelper";
-import { getDayInWeekFromDkDate } from "../helpers/date_utils";
+//import { getDayInWeekFromDkDate } from "../helpers/date_utils";
 
 import {
   Accordion,

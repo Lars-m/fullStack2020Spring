@@ -28,12 +28,10 @@ export default class Links extends React.Component {
 
   render() {
     const data = this.props.data;
-    console.log("-->", data);
     const linksFromSettings = data.site.siteMetadata.topMenu.find(
       d => d.title === "Links"
     );
     const toInclude = linksFromSettings.include;
-    //console.log("-->",includes)
     return (
       <Layout>
         <h2>

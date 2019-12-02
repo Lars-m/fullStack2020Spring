@@ -11,10 +11,13 @@ function autoInsertLinksForWeek(data) {
   const start =
     raw.indexOf("<!--PeriodExercises") + "<!--PeriodExercises".length + 1;
   const end = raw.indexOf("PeriodExercises-->");
+  if(post.fields.title === "SKIP"){
+    return
+  }
 
   if (start === -1 || end === -1 || start > end) {
     console.error(
-      "Illegal syntax for <!--PeriodExercises period/week PeriodExercises-->"
+      "Illegal syntax for <!--PeriodExercises period/week PeriodExercises--> "
     );
     return;
   }
