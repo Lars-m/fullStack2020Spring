@@ -3,6 +3,7 @@ import React from "react";
 import Layout from "../components/layout";
 import {makeUlForGoalsV2} from "../helpers/goalHelper";
 import { getDayInWeekFromDkDate } from "../helpers/date_utils";
+
 import {
   Accordion,
   AccordionItem,
@@ -11,59 +12,70 @@ import {
   AccordionItemPanel
 } from "react-accessible-accordion";
 
+function getRelativePathParts(node){
+  const index = node.fileAbsolutePath.indexOf("/pages/")+"/pages/".length;
+  const relativePath = node.fileAbsolutePath.substring(index)
+  return relativePath.split("/");
+}
+
 export default ({ data }) => {
   const allNodes = data.allMarkdownRemark.nodes;
-  //Get all nodes with VALID Json-parsable data
-  const nodesWithGoals = allNodes.filter(node=>{
-    if(!node.frontmatter.learningGoals){
-      return false;
-    }
-    try{
-      JSON.parse(node.frontmatter.learningGoals)
-      return true;
-    } catch (err){
-      return false;
-    }
-  });
-  const goals = nodesWithGoals.map(node=>JSON.parse(node.frontmatter.learningGoals))
-  goals.sort((a,b)=>a.week > b.week? 1 : -1)
-  const goalsGrouped = {};
-  let header = "";
-  goals.forEach(g => {
-    const assArray = g.week.split("/");
-    assArray[1] = ", "+assArray[1].charAt(0).toUpperCase() + assArray[1].slice(1)
-    const h = `${assArray.join("")}`;
-    if (h !== header) {
-      goalsGrouped[h] = [];
-      header = h;
-    }
-    let day = "";
-    try {
-      const aDay = getDayInWeekFromDkDate(g.day);
-      day = aDay + (<br />) ? aDay : "";
-    } catch (e) {}
-    const title = <React.Fragment>{day} <br/> {g.day}</React.Fragment>
-    goalsGrouped[h].push({ day: title, sortField:g.sortField,goals: makeUlForGoalsV2(g.goals) });
+  const nodesWithGoals = allNodes.filter(node=>{ 
+    //Relative path is included in order not to include goals from overriden classes
+    return (node.frontmatter.goals && node.frontmatter.title !=="SKIP" && getRelativePathParts(node).length===3)
   });
   
-  for(let key in goalsGrouped ){
-    goalsGrouped[key].sort((a,b)=> a.sortField > b.sortField ? 1 : -1)
-  }
+  const goals = nodesWithGoals.map(node=> {
+    let goal = {};
+    goal.goals = node.frontmatter.goals.split("\n");
+    goal.title = node.frontmatter.title;
+    const pathParts = getRelativePathParts(node);
+    goal.date = node.frontmatter.date
+    goal.period = pathParts[pathParts.length-3];
+    goal.week = pathParts[pathParts.length-2];
+    //goal.path = node.fileAbsolutePath
+    return goal;
+  })
 
-  const accordionItems = [];
+  const periodsObj = {};
+  goals.forEach(g=>{
+   
+    const p = g.period;
+    if(!periodsObj[p]){
+      let period = {};
+      period.title = g.period;
+      period.weeks = [];
+      periodsObj[p] = {}
+      periodsObj[p].period = period;
+    }
+    periodsObj[p].period.weeks.push(g);
+  })
+  let periods =[]
+  for(var p in periodsObj){
+    periods.push(periodsObj[p]);
+  }
+  periods = periods.sort((a,b) => {
+    var first  =  a.period.title.toLowerCase();
+    var second =  b.period.title.toLowerCase();
+    if(first < second) return -1;
+    if(first > second) return 1;
+    return 0;
+  })
+    const accordionItems = [];
   let id = 0;
-  for (let property in goalsGrouped) {
+  periods.forEach(p=> {
     id++;
-    const rows = goalsGrouped[property].map((g, idx) => (
+    const period = p.period;
+    const rows = period.weeks.map((g, idx) => (
       <tr key={idx} style={{margin:0,padding:0}}>
-        <td style={{width:120}}>{g.day}</td>
-        <td>{g.goals}</td>
+        <td style={{width:120,fontSize:10}}>{g.title}</td>
+        <td>{makeUlForGoalsV2(g.goals)}</td>
       </tr>
     ));
     const accordionGroup = (
       <AccordionItem key={id}>
         <AccordionItemHeading>
-          <AccordionItemButton>{property}</AccordionItemButton>
+          <AccordionItemButton>{period.title}</AccordionItemButton>
         </AccordionItemHeading>
         <AccordionItemPanel>
           <table>
@@ -73,12 +85,13 @@ export default ({ data }) => {
       </AccordionItem>
     );
     accordionItems.push(accordionGroup);
-  }
+  })
+    
  
   return (
     <Layout>
       <h2>Learning Goals (Period-1)</h2>
-      <p>All learning goals, listed pr. period/week</p>
+      <p>All learning goals, listed pr. period</p>
       <Accordion allowZeroExpanded={true} >
         {accordionItems}
       </Accordion>
@@ -86,15 +99,7 @@ export default ({ data }) => {
   );
 
   
-  // return (
-  //   <Layout>
-  //     <h2>Learning Goals (Period-1)</h2>
-  //     <p>All learning goals, listed pr. period/week</p>
-  //     <ul>
-  //     {items}  
-  //     </ul>
-  //   </Layout>
-  // );
+  
 };
 
 export const query = graphql`
@@ -106,13 +111,13 @@ export const query = graphql`
       totalCount
       nodes {
         id
-        rawMarkdownBody
         frontmatter {
           title
           pageintro
-          learningGoals
+          goals
+          date
         }
-        
+        fileAbsolutePath
       }
     }
   }

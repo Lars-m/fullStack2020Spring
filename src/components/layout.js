@@ -13,28 +13,47 @@ import "../../style.css";
 import selectedPages from "../helpers/pagesForMenu";
 import Select from "react-select";
 
-function getFromLocalStorage(id){
-  return localStorage[`${id}_selectedClass`]
+// function getFromLocalStorage(id) {
+//   return localStorage[`${id}_selectedClass`];
+// }
+function getFromLocalStorage(id,classes) {
+  const className = localStorage[`${id}_selectedClass`];
+  const selectedClass = classes.find(class_=> class_.value=== className);
+  return selectedClass;
+
 }
-function setInLocalStorage(value,id){
-  localStorage[`${id}_selectedClass`] = JSON.stringify(value);
+function setInLocalStorage(value, id) {
+  //localStorage[`${id}_selectedClass`] = JSON.stringify(value);
+  localStorage[`${id}_selectedClass`] = value;
 }
+
+const StyleContext = React.createContext({});
+
 class Container extends React.Component {
   constructor(props) {
     super(props);
     let selectedClass = null;
-    const idLocalStorage = this.props.site.siteMetadata.idLocalStorage;
-
-    if (typeof localStorage !== "undefined" && getFromLocalStorage(idLocalStorage)) {
-      selectedClass = JSON.parse(getFromLocalStorage(idLocalStorage));
+    const { idLocalStorage, classes } = this.props.site.siteMetadata;
+    if (classes.length === 1) {
+      selectedClass = classes[0];
     }
+    if (
+      selectedClass === null &&
+      typeof localStorage !== "undefined" &&
+      getFromLocalStorage(idLocalStorage,classes)
+    ) {
+      //selectedClass = JSON.parse(getFromLocalStorage(idLocalStorage));
+      selectedClass = getFromLocalStorage(idLocalStorage,classes);
+    }
+    //When more than one class, until a class is selecte first clas in list sets the Styles
+    const defaultBackground = classes[0].backgroundColor;
+    selectedClass = selectedClass ? selectedClass : classes[0]
     let offline = false;
     if (typeof navigator != "undefined") {
       offline = !navigator.onLine;
     }
-
     //necessary since first time it executes it's done by node and not in a browser
-    this.state = { offline, showModal: false, selectedClass,idLocalStorage };
+    this.state = { offline, showModal: false, selectedClass, idLocalStorage,defaultBackground };
   }
 
   componentDidMount() {
@@ -70,8 +89,9 @@ class Container extends React.Component {
 
   handleClassChange = selectedClass => {
     this.setState({ selectedClass });
-   // localStorage.selectedClass = JSON.stringify(selectedClass);
-    setInLocalStorage(selectedClass,this.state.idLocalStorage);
+    // localStorage.selectedClass = JSON.stringify(selectedClass);
+    setInLocalStorage(selectedClass.value, this.state.idLocalStorage);
+    //setInLocalStorage(selectedClass, this.state.idLocalStorage);
 
     //Check whether this can be done via the Router
     navigate(window.location.pathname);
@@ -196,17 +216,17 @@ class Container extends React.Component {
           {l.title}
         </a>
       ) : (
-          <Link
-            key={l.title}
-            to={l.route}
-            onClick={() => selectedPages.resetSubMenus()}
-            target="_blank"
-            activeClassName="active"
-          >
-            {" "}
-            {l.title}
-          </Link>
-        );
+        <Link
+          key={l.title}
+          to={l.route}
+          onClick={() => selectedPages.resetSubMenus()}
+          target="_blank"
+          activeClassName="active"
+        >
+          {" "}
+          {l.title}
+        </Link>
+      );
     });
     let pageLinksLevel1 = plt.map(p => (
       <Link
@@ -225,9 +245,13 @@ class Container extends React.Component {
       : "";
     const background = this.state.selectedClass
       ? { backgroundColor: this.state.selectedClass.backgroundColor }
-      : {};
-
-    const title2 = classes.length > 1 ? `${data.site.siteMetadata.title2} - ${selected}` :data.site.siteMetadata.title2;
+      : {backgroundColor:this.state.defaultBackground};
+    
+    const title2 =
+      classes.length > 1
+        ? `${data.site.siteMetadata.title2} - ${selected}`
+        : data.site.siteMetadata.title2;
+      
     return (
       <div>
         <div className="header" style={background}>
@@ -235,9 +259,7 @@ class Container extends React.Component {
             <img src={logo} alt="Logo" />
             <div style={{ alignSelf: "flex-start", marginLeft: "2em" }}>
               <h1>{data.site.siteMetadata.title1}</h1>
-              <p>
-                {title2}
-              </p>
+              <p>{title2}</p>
             </div>
           </div>
           <div className="main-links">{topLinks}</div>
@@ -245,13 +267,15 @@ class Container extends React.Component {
 
         <div className="content-frame">
           <div className="period-links">
-          {classes.length >1 && <div style={{ width: 130 }}>
-             <Select
-                value={this.state.selectedClass}
-                onChange={this.handleClassChange}
-                options={classes}
-              />
-            </div>}
+            {classes.length > 1 && (
+              <div style={{ width: 130 }}>
+                <Select
+                  value={this.state.selectedClass}
+                  onChange={this.handleClassChange}
+                  options={classes}
+                />
+              </div>
+            )}
             {pageLinksLevel1}
             {/* HACK to ensure icon is preloaded while online*/}
             <img style={{ width: 1 }} src={offline} alt="dummy" />{" "}
@@ -268,7 +292,11 @@ class Container extends React.Component {
             show={this.state.showModal}
             onClose={this.closeModal}
           />
-          <div> {this.props.children}</div>
+          <div>
+            <StyleContext.Provider value={background}>
+              {this.props.children}
+            </StyleContext.Provider>
+          </div>
         </div>
       </div>
     );
@@ -285,17 +313,16 @@ class Container extends React.Component {
       if (localStorage[newsId]) {
         const oldSize = Number(localStorage[newsId]);
         const currentSize = sizeOfNews;
-        localStorage[newsId]=  currentSize;
+        localStorage[newsId] = currentSize;
         if (oldSize !== currentSize) {
           navigate("/news");
         }
-      } 
-      else {
+      } else {
         const currentSize = sizeOfNews;
-        localStorage[newsId]=  currentSize;
+        localStorage[newsId] = currentSize;
         navigate("/news");
       }
-    } catch (err) { }
+    } catch (err) {}
 
     //path should look like this "/aaaa/..."
     const parts = window.location.pathname.split("/");
@@ -324,12 +351,19 @@ class Container extends React.Component {
   }
 }
 
-export default ({ children }) => (
+const outer = ({ children }) => (
   <StaticQuery
     query={query}
     render={data => <Container {...data} children={children} />}
   />
 );
+export { outer as default, StyleContext }
+// export default ({ children }) => (
+//   <StaticQuery
+//     query={query}
+//     render={data => <Container {...data} children={children} />}
+//   />
+// );
 
 var query = graphql`
   {
@@ -367,6 +401,7 @@ var query = graphql`
           title
           URL
           route
+          include
         }
       }
     }

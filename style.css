@@ -144,12 +144,21 @@ body {
 
 .period-info {
   background-color: #295683;
-  border-radius: 5;
+  border-radius: 5px;
   color: white;
   padding: 16px;
   padding-top: 1px;
   display: block;
 }
+
+.description-header{           
+  border-radius: 5px;
+  color: white;
+  padding: 16px;
+  padding-top: 1px;
+  padding-bottom: 0px
+}
+
 
 /* a[href*="http"] {
   background: url('images/external-link.png') no-repeat 100% 0;

@@ -1,5 +1,5 @@
 ﻿---
-title: "XXXXXX"
+title: "SKIP"
 date: "XXXXXXXXXXXXXX"
 isSP: true
 notForMenu: true

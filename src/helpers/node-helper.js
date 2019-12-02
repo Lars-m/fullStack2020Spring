@@ -1,7 +1,7 @@
 export function getOverridenPageInfo(nodes, selectedClass, folder, fileName) {
   let replacementHTML = null;
   if (!selectedClass) {
-    console.error("No Class Selected, cannot provide overridden page-info");
+    //console.error("No Class Selected, cannot provide overridden page-info");
     return replacementHTML;
   }
   nodes.forEach(node => {
@@ -32,7 +32,7 @@ export function getOverridenPageInfoRaw(nodes, node) {
   let replacementHTML = null;
 
   if (!selectedClass) {
-    console.error("No Class Selected, cannot provide overridden page-info");
+    //console.error("No Class Selected, cannot provide overridden page-info");
     return replacementHTML;
   }
  

@@ -1,6 +1,6 @@
 import React from "react";
-import { graphql} from "gatsby";
-import Layout from "../components/layout";
+import { graphql } from "gatsby";
+import Layout, { StyleContext } from "../components/layout";
 
 //To Style (add line breaks) frontmatter
 // Uses example from here: https://github.com/gatsbyjs/gatsby/issues/5021
@@ -18,22 +18,18 @@ export default ({ data }) => {
     .toString();
   return (
     <Layout>
-      <div>
-        <div
-          style={{
-            backgroundColor: "#295683",
-            borderRadius: 5,
-            color: "white",
-            padding: 16,
-            paddingTop: 1
-          }}
-        >
-          <h1>{title}</h1>
-          {/* <div>{post.frontmatter.headertext}</div> */}
-          { <div dangerouslySetInnerHTML={{ __html: pageInfo }} /> }
-        </div>
-        <div dangerouslySetInnerHTML={{ __html: post.html }} />
-      </div>
+      <StyleContext.Consumer>
+        {value => (
+          <div key={7857934}>
+            <div className="description-header" style={value}>
+              <h1>{title}</h1>
+              {/* <div>{post.frontmatter.headertext}</div> */}
+              {<div dangerouslySetInnerHTML={{ __html: pageInfo }} />}
+            </div>
+            <div dangerouslySetInnerHTML={{ __html: post.html }} />
+          </div>
+        )}
+      </StyleContext.Consumer>
     </Layout>
   );
 };
